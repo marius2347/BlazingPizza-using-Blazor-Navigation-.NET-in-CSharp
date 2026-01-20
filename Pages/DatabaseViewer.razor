@@ -1,0 +1,163 @@
+@page "/database-viewer"
+@using Microsoft.EntityFrameworkCore
+@inject PizzaStoreContext DbContext
+
+<div class="main">
+    <h2>Database Viewer</h2>
+
+    <div class="section">
+        <h3>Pizza Specials (@specials.Count)</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Base Price</th>
+                    <th>Image URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var special in specials)
+                {
+                    <tr>
+                        <td>@special.Id</td>
+                        <td>@special.Name</td>
+                        <td>@special.Description</td>
+                        <td>$@special.BasePrice</td>
+                        <td>@special.ImageUrl</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Toppings (@toppings.Count)</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var topping in toppings)
+                {
+                    <tr>
+                        <td>@topping.Id</td>
+                        <td>@topping.Name</td>
+                        <td>$@topping.Price</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Orders (@orders.Count)</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User</th>
+                    <th>Created Time</th>
+                    <th>Delivery Address</th>
+                    <th>Pizzas Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in orders)
+                {
+                    <tr>
+                        <td>@order.OrderId</td>
+                        <td>@order.UserId</td>
+                        <td>@order.CreatedTime</td>
+                        <td>@(order.DeliveryAddress?.Name ?? "N/A")</td>
+                        <td>@order.Pizzas?.Count</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Pizzas (@pizzas.Count)</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Order ID</th>
+                    <th>Special ID</th>
+                    <th>Size</th>
+                    <th>Toppings Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var pizza in pizzas)
+                {
+                    <tr>
+                        <td>@pizza.Id</td>
+                        <td>@pizza.OrderId</td>
+                        <td>@pizza.SpecialId</td>
+                        <td>@pizza.Size</td>
+                        <td>@pizza.Toppings?.Count</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    List<PizzaSpecial> specials = new();
+    List<Topping> toppings = new();
+    List<Order> orders = new();
+    List<Pizza> pizzas = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        specials = await DbContext.Specials.ToListAsync();
+        toppings = await DbContext.Toppings.ToListAsync();
+        orders = await DbContext.Orders
+            .Include(o => o.DeliveryAddress)
+            .Include(o => o.Pizzas)
+            .OrderByDescending(o => o.CreatedTime)
+            .ToListAsync();
+        pizzas = await DbContext.Pizzas
+            .Include(p => p.Toppings)
+            .ToListAsync();
+    }
+}
+
+<style>
+    .section {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f5f5f5;
+        border-radius: 5px;
+    }
+
+    .table {
+        width: 100%;
+        background: white;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .table th, .table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .table th {
+        background-color: #e23c34;
+        color: white;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+</style>
